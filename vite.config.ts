@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Plugins: React and PWA support
   plugins: [
     react(),
     VitePWA({
@@ -36,6 +37,7 @@ export default defineConfig({
       workbox: {
         runtimeCaching: [
           {
+            // Cache ScreenScraper API responses
             urlPattern: /^https:\/\/api\.screenscraper\.fr\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -50,6 +52,7 @@ export default defineConfig({
             }
           },
           {
+            // Cache SteamGridDB API responses
             urlPattern: /^https:\/\/www\.steamgriddb\.com\/api\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -64,6 +67,7 @@ export default defineConfig({
             }
           },
           {
+            // Cache game images
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
             handler: 'CacheFirst',
             options: {
@@ -78,5 +82,20 @@ export default defineConfig({
       }
     })
   ],
-  base: '/Mister2ndScreen/'
+
+  // Base public path for GitHub Pages project site
+  base: '/Mister2ndScreen/',
+
+  // Build output for GH Pages
+  build: {
+    outDir: 'docs',       // Place built files in docs/ for Pages :contentReference[oaicite:0]{index=0}
+    emptyOutDir: true
+  },
+
+  // Dev server: expose on LAN for testing on other devices
+  server: {
+    host: '0.0.0.0',      // Listen on all addresses, not just localhost :contentReference[oaicite:1]{index=1}
+    port: 5173,           // Pin port to 5173 (default) :contentReference[oaicite:2]{index=2}
+    strictPort: true      // Exit if 5173 is busy, rather than try another port :contentReference[oaicite:3]{index=3}
+  }
 })

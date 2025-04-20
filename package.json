@@ -19,7 +19,7 @@
     "appId": "com.pezz82.mister2ndscreen",
     "files": [
       "docs/**/*",
-      "main.js",
+      "main.cjs",
       "preload.js",
       "package.json"
     ],

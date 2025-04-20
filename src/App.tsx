@@ -117,6 +117,14 @@ const App: React.FC = () => {
   const [ssUser, setSsUser] = useState(import.meta.env.VITE_SS_USER || '');
   const [ssUserPass, setSsUserPass] = useState(import.meta.env.VITE_SS_USERPASS || '');
   const [darkMode, setDarkMode] = useState(
+  window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+ );
+
+// MiSTer status (core, game, connection) via polling REST API :contentReference[oaicite:1]{index=1}
+const { coreRunning, gameRunning, connected, error, refresh } = useMisterStatus({
+ host: misterHost,            // from your settings drawer state
+ pollInterval: 2000
++});
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
   );
   

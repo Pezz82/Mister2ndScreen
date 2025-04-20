@@ -1,144 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import useMisterStatus from '../hooks/useMisterStatus';
-import useArtProviderWithFallback from '../hooks/useArtProviderWithFallback';
-import useGamepadWatcher from '../hooks/useGamepadWatcher';
-import ConsolePad from './ControlsOverlay/ConsolePad';
-import ArcadePanel from './ControlsOverlay/ArcadePanel';
+import { useState, useEffect } from 'react';
 
 interface ArtCardProps {
-  className?: string;
+  gameTitle: string;       // e.g. "Super Mario Bros"
 }
 
-const ArtCard: React.FC<ArtCardProps> = ({ className = '' }) => {
-  const { coreRunning, gameRunning, system, filename, connected, error, reconnect } = useMisterStatus();
-  const { gameArt, isLoading, refetch } = useArtProviderWithFallback({ 
-    system, 
-    romName: filename 
-  });
-  const { activeGamepad } = useGamepadWatcher();
-  
-  const [showControls, setShowControls] = useState(true);
-  
-  // Determine if we should show arcade or console controls
-  const isArcade = system === 'Arcade' || system === 'NeoGeo';
-  
+export function ArtCard({ gameTitle }: ArtCardProps) {
+  const [artUrl, setArtUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Replace these with your real ScreenScraper credentials,
+  // or better yet, load them from environment variables.
+  const SCR_DEV_ID   = import.meta.env.VITE_SS_DEVID   || '';
+  const SCR_DEV_PW   = import.meta.env.VITE_SS_DEVPW   || '';
+  const SCR_SOFTNAME = import.meta.env.VITE_SS_SOFTNAME || 'mister-second-screen';
+
+  useEffect(() => {
+    if (!gameTitle) return;
+
+    const fetchArt = async () => {
+      try {
+        const url = [
+          'https://www.screenscraper.fr/api2/mediaJeu.php',
+          `devid=${encodeURIComponent(SCR_DEV_ID)}`,
+          `devpassword=${encodeURIComponent(SCR_DEV_PW)}`,
+          `softname=${encodeURIComponent(SCR_SOFTNAME)}`,
+          'output=json',
+          `jeu_nom=${encodeURIComponent(gameTitle)}`,
+          'media=box-2D',
+          'cover=1'
+        ].join('&').replace('?','?');
+
+        const resp = await fetch(url.startsWith('?') ? url.replace('&','?') : url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const media = Array.isArray(data) ? data[0] : null;
+
+        if (media?.url) {
+          setArtUrl(media.url);
+          setError(null);
+        } else {
+          setArtUrl(null);
+          setError('No art found');
+        }
+      } catch (err) {
+        console.error('Art fetch failed', err);
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    };
+
+    fetchArt();
+  }, [gameTitle, SCR_DEV_ID, SCR_DEV_PW, SCR_SOFTNAME]);
+
+  if (error) return <div className="art-card--error">Error loading art: {error}</div>;
+  if (!artUrl) return <div className="art-card--loading">Loading art…</div>;
+
   return (
-    <div className={`art-card ${className}`}>
-      <div className="status-bar">
-        <div className={`connection-status ${connected ? 'connected' : 'disconnected'}`}>
-          {connected ? 'Connected to MiSTer' : 'Disconnected'}
-          {!connected && (
-            <button onClick={reconnect} className="reconnect-button">
-              Reconnect
-            </button>
-          )}
-        </div>
-        
-        {error && (
-          <div className="error-message">
-            Error: {error}
-          </div>
-        )}
-      </div>
-      
-      <AnimatePresence mode="wait">
-        {coreRunning && (
-          <motion.div 
-            key={`core-${coreRunning}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="core-info"
-          >
-            <h2>Core: {coreRunning}</h2>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      <AnimatePresence mode="wait">
-        {gameRunning && (
-          <motion.div 
-            key={`game-${gameRunning}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="game-info"
-          >
-            <div className="game-details">
-              <h3>{gameArt.title || filename}</h3>
-              <p>System: {system}</p>
-            </div>
-            
-            {isLoading ? (
-              <div className="loading-art">Loading artwork...</div>
-            ) : gameArt.boxart ? (
-              <div className="game-art">
-                <img 
-                  src={gameArt.boxart} 
-                  alt={gameArt.title || filename || 'Game artwork'} 
-                  className="boxart"
-                />
-              </div>
-            ) : (
-              <div className="no-art">
-                <p>No artwork found</p>
-                <button onClick={refetch} className="retry-button">
-                  Retry
-                </button>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      <div className="controls-section">
-        <div className="controls-header">
-          <h3>Controls</h3>
-          <button 
-            onClick={() => setShowControls(!showControls)}
-            className="toggle-controls-button"
-          >
-            {showControls ? 'Hide' : 'Show'}
-          </button>
-        </div>
-        
-        <AnimatePresence>
-          {showControls && gameRunning && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="controls-overlay"
-            >
-              {isArcade ? (
-                <ArcadePanel 
-                  game={filename || ''} 
-                  activeButtons={activeGamepad?.buttons}
-                />
-              ) : (
-                <ConsolePad 
-                  system={system || 'generic'} 
-                  activeButtons={activeGamepad?.buttons}
-                />
-              )}
-              
-              <div className="gamepad-status">
-                {activeGamepad ? (
-                  <p>Gamepad connected: {activeGamepad.id}</p>
-                ) : (
-                  <p>No gamepad detected. Connect a controller to see live button presses.</p>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+    <div className="art-card">
+      <img
+        src={artUrl}
+        alt={`${gameTitle} box art`}
+        className="art-card__image"
+      />
     </div>
   );
-};
-
-export default ArtCard;
+}

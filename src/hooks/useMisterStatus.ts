@@ -48,7 +48,7 @@ export const useMisterStatus = (options?: MisterStatusOptions) => {
       const data = await res.json();
 
       // Debug: inspect raw payload in console if needed
-      // console.log('MiSTer /games/playing response:', data);
+     console.log('MiSTer /games/playing response:', data);
 
       // Friendly game title comes from `gameName` field
       const title = data.gameName || '';

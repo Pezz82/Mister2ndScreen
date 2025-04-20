@@ -20,7 +20,11 @@ function createWindow() {
 
   // Load the built React app (docs/index.html)
   win.loadFile(path.join(__dirname, 'docs', 'index.html'));
-
+  
+  // For debugging: open the dev‑tools so we can inspect console/network logs
+  win.webContents.once('dom-ready', () => {
+  win.webContents.openDevTools({ mode: 'detach' });
+  });
   win.once('ready-to-show', () => {
     win.show();
   });

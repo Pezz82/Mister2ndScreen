@@ -1,15 +1,14 @@
 {
   "name": "mister-second-screen",
-  "private": false,
   "version": "0.1.0",
+  "private": false,
   "type": "module",
+  "homepage": "https://pezz82.github.io/Mister2ndScreen/",
   "scripts": {
-  "dev": "vite",
-  "build": "vite build",
-  "predeploy": "npm run build",
-  "deploy":    "gh‑pages -d docs"
-}
-
+    "dev": "vite",
+    "build": "vite build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d docs",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -36,8 +35,7 @@
     "eslint-plugin-react-refresh": "^0.4.5",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
-    "vite-plugin-pwa": "^0.17.0"
-    "gh‑pages": "^6.0.0"
-
+    "vite-plugin-pwa": "^0.17.0",
+    "gh-pages": "^6.0.0"
   }
-
+}

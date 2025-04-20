@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-interface MisterStatus {
+export interface MisterStatus {
   coreRunning: string | null;
   gameRunning: string | null;
   system: string | null;
@@ -9,16 +9,18 @@ interface MisterStatus {
   error: string | null;
 }
 
-interface MisterStatusOptions {
+export interface MisterStatusOptions {
   host?: string;
-  pollInterval?: number;  // in ms
+  port?: string;
+  apiBase?: string;
+  pollInterval?: number;
 }
 
 export const useMisterStatus = (options?: MisterStatusOptions) => {
-  const host         = options?.host || import.meta.env.VITE_MISTER_HOST || '192.168.0.135';
-  const port         = import.meta.env.VITE_MISTER_PORT || '8182';
-  const apiBase      = import.meta.env.VITE_MISTER_API_BASE || '/api';
-  const pollInterval = options?.pollInterval ?? 2000; // 2 seconds
+  const host         = options?.host         || import.meta.env.VITE_MISTER_HOST   || '192.168.0.135';
+  const port         = options?.port         || import.meta.env.VITE_MISTER_PORT   || '8182';
+  const apiBase      = options?.apiBase      || import.meta.env.VITE_MISTER_API_BASE || '/api';
+  const pollInterval = options?.pollInterval ?? 2000;  // milliseconds
 
   const [status, setStatus] = useState<MisterStatus>({
     coreRunning: null,
@@ -29,18 +31,27 @@ export const useMisterStatus = (options?: MisterStatusOptions) => {
     error: null
   });
 
-  const poller = useRef<number | null>(null);
+  const intervalRef = useRef<number>();
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await fetch(`http://${host}:${port}${apiBase}/games/playing`);
+      const url = `http://${host}:${port}${apiBase}/games/playing`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+
+      // Parse friendly title
+      const rawGame = data.game || '';
+      const title = rawGame
+        .replace(/\.[^/.]+$/, '')   // strip extension
+        .replace(/_/g, ' ')         // underscores → spaces
+        .trim();
+
       setStatus({
-        coreRunning: data.core   || null,
+        coreRunning: data.core || null,
         system:      data.system || null,
-        filename:    data.game   || null,
-        gameRunning: data.game ? `${data.system}/${data.game}` : null,
+        filename:    rawGame,
+        gameRunning: title || null,
         connected:   true,
         error:       null
       });
@@ -48,31 +59,34 @@ export const useMisterStatus = (options?: MisterStatusOptions) => {
       setStatus(s => ({
         ...s,
         connected: false,
-        error:     (err as Error).message
+        error:     err instanceof Error ? err.message : String(err)
       }));
     }
   }, [host, port, apiBase]);
 
   useEffect(() => {
-    // Initial fetch
+    // initial fetch
     fetchStatus();
-    // Set up polling
-    poller.current = window.setInterval(fetchStatus, pollInterval);
+
+    // set up polling
+    intervalRef.current = window.setInterval(fetchStatus, pollInterval);
 
     return () => {
-      if (poller.current !== null) {
-        clearInterval(poller.current);
-        poller.current = null;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     };
   }, [fetchStatus, pollInterval]);
 
-  // Expose manual refresh too
+  // manual refresh
   const refresh = useCallback(() => {
     fetchStatus();
   }, [fetchStatus]);
 
-  return { ...status, refresh };
+  return {
+    ...status,
+    refresh
+  };
 };
 
 export default useMisterStatus;

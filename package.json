@@ -1,7 +1,7 @@
 {
   "name": "mister-second-screen",
   "version": "0.1.0",
-  "main": "main.js",
+  "main": "main.cjs",
   "private": false,
   "type": "module",
   "homepage": "https://pezz82.github.io/Mister2ndScreen/",

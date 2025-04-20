@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import ArtCard from './components/ArtCard';
+import { ArtCard } from './components/ArtCard';
+import useMisterStatus from './hooks/useMisterStatus';  // use our status hook :contentReference[oaicite:0]{index=0}
 import { isPWA, listenForInstallPrompt, showInstallPrompt } from './services/pwaService';
 
 interface SettingsDrawerProps {

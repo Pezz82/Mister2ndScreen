@@ -77,7 +77,7 @@ export const useMisterStatus = (options?: MisterStatusOptions) => {
   // Fetch current status via REST API as fallback
   const fetchStatusViaREST = useCallback(async () => {
     try {
-      const response = await fetch(`http://${host}/games/playing`);
+      const response = await fetch(`http://${host}:8182/api/games/playing`);
       
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
@@ -109,7 +109,7 @@ export const useMisterStatus = (options?: MisterStatusOptions) => {
     }
     
     try {
-      const ws = new WebSocket(`ws://${host}:64293/ws`);
+      const ws = new WebSocket(`ws://${host}:8182/ws`);
       
       ws.onopen = () => {
         console.log('WebSocket connected');
@@ -223,3 +223,4 @@ export const useMisterStatus = (options?: MisterStatusOptions) => {
 };
 
 export default useMisterStatus;
+

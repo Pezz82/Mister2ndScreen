@@ -57,7 +57,7 @@ export default defineConfig({
   ],
 
   // GitHub Pages base path
-  base: '/Mister2ndScreen/',
+  base: './',
 
   // Build into docs/ for Pages
   build: {

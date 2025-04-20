@@ -33,5 +33,7 @@
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
     "vite-plugin-pwa": "^0.17.0"
+    npm install --save-dev gh-pages
+
   }
 }

@@ -1,10 +1,9 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite'            // use TS‑friendly helper :contentReference[oaicite:5]{index=5}
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  // Plugins: React and PWA support
+  // React + PWA plugins
   plugins: [
     react(),
     VitePWA({
@@ -16,86 +15,71 @@ export default defineConfig({
         description: 'Second screen companion app for MiSTer FPGA',
         theme_color: '#3a86ff',
         icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       },
       workbox: {
         runtimeCaching: [
           {
-            // Cache ScreenScraper API responses
+            // Cache ScreenScraper API
             urlPattern: /^https:\/\/api\.screenscraper\.fr\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'screenscraper-api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
           {
-            // Cache SteamGridDB API responses
+            // Cache SteamGridDB API
             urlPattern: /^https:\/\/www\.steamgriddb\.com\/api\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'steamgriddb-api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] }
             }
           },
           {
-            // Cache game images
+            // Cache images
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'images-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              }
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 }
             }
           }
         ]
       }
-    })
+    })                                       
   ],
 
-  // Base public path for GitHub Pages project site
+  // GitHub Pages base path
   base: '/Mister2ndScreen/',
 
-  // Build output for GH Pages
+  // Build into docs/ for Pages
   build: {
-    outDir: 'docs',       // Place built files in docs/ for Pages :contentReference[oaicite:0]{index=0}
+    outDir: 'docs',
     emptyOutDir: true
   },
 
-  // Dev server: expose on LAN for testing on other devices
+  // Dev server: LAN + proxy
   server: {
-    host: '0.0.0.0',      // Listen on all addresses, not just localhost :contentReference[oaicite:1]{index=1}
-    port: 5173,           // Pin port to 5173 (default) :contentReference[oaicite:2]{index=2}
-    strictPort: true      // Exit if 5173 is busy, rather than try another port :contentReference[oaicite:3]{index=3}
+    host: '0.0.0.0',     // listen on all interfaces for LAN access :contentReference[oaicite:6]{index=6}
+    port: 5173,          // fixed port to avoid auto‑increment :contentReference[oaicite:7]{index=7}
+    strictPort: true,    // fail instead of switching port :contentReference[oaicite:8]{index=8}
+    proxy: {             // bypass mixed‑content & CORS for MiSTer endpoints :contentReference[oaicite:9]{index=9}
+      '/api': {          // any request to /api → MiSTer’s REST API
+        target: 'http://192.168.0.135:8182',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api/, '/api')
+      },
+      '/ws': {           // WebSocket proxy for /ws → MiSTer’s socket
+        target: 'ws://192.168.0.135:8182',
+        ws: true
+      }
+    }
   }
 })

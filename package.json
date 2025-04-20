@@ -58,13 +58,3 @@
     "gh-pages": "^6.0.0"
   }
 }
-*/
-
-// ----------------------------
-// Usage:
-// 1. npm install --save-dev electron electron-builder
-// 2. npm run build           # outputs React build to docs/
-// 3. npm run electron:dev    # preview desktop app
-// 4. npm run build:electron  # package executables into release/
-// ----------------------------
-

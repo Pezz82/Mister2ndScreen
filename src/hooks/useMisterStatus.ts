@@ -19,7 +19,7 @@ interface MisterStatusOptions {
  * Hook to connect to MiSTer Remote and detect which core/game is running.
  */
 export const useMisterStatus = (options?: MisterStatusOptions) => {
-  const host = options?.host || import.meta.env.VITE_MISTER_HOST || '192.168.1.42';
+  const host = options?.host || import.meta.env.VITE_MISTER_HOST || '192.168.0.135';
   const port = import.meta.env.VITE_MISTER_PORT || '8182';
   const apiBase = import.meta.env.VITE_MISTER_API_BASE || '/api';
   const reconnectInterval = options?.reconnectInterval ?? 5000;

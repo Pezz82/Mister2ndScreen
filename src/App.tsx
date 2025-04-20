@@ -1,7 +1,8 @@
+// src/App.tsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArtCard } from './components/ArtCard';
-import useMisterStatus from './hooks/useMisterStatus';  // use our status hook :contentReference[oaicite:0]{index=0}
+import useMisterStatus from './hooks/useMisterStatus';
 import { isPWA, listenForInstallPrompt, showInstallPrompt } from './services/pwaService';
 
 interface SettingsDrawerProps {
@@ -60,7 +61,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             type="text" 
             value={localMisterHost} 
             onChange={(e) => setLocalMisterHost(e.target.value)}
-            placeholder="192.168.1.42"
+            placeholder="192.168.0.135"
           />
         </div>
         
@@ -113,68 +114,48 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 };
 
 const App: React.FC = () => {
-  const [misterHost, setMisterHost] = useState(import.meta.env.VITE_MISTER_HOST || '192.168.1.42');
+  // Settings state
+  const [misterHost, setMisterHost] = useState(import.meta.env.VITE_MISTER_HOST || '192.168.0.135');
   const [ssUser, setSsUser] = useState(import.meta.env.VITE_SS_USER || '');
   const [ssUserPass, setSsUserPass] = useState(import.meta.env.VITE_SS_USERPASS || '');
   const [darkMode, setDarkMode] = useState(
-  window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
- );
-
-// MiSTer status (core, game, connection) via polling REST API :contentReference[oaicite:1]{index=1}
-const { coreRunning, gameRunning, connected, error, refresh } = useMisterStatus({
- host: misterHost,            // from your settings drawer state
- pollInterval: 2000
-+});
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
   );
-  
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [isInstalled, setIsInstalled] = useState(isPWA());
   const [installPrompt, setInstallPrompt] = useState<any>(null);
-  
-  // Listen for online/offline events
+
+  // Listen for online/offline
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
+    const onOnline  = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
     };
   }, []);
-  
-  // Listen for PWA install prompt
+
+  // PWA install prompt
   useEffect(() => {
-    listenForInstallPrompt((e) => {
-      setInstallPrompt(e);
-    });
-    
-    // Check if already installed
-    const checkInstalled = () => {
-      setIsInstalled(isPWA());
-    };
-    
-    window.addEventListener('appinstalled', checkInstalled);
-    
-    return () => {
-      window.removeEventListener('appinstalled', checkInstalled);
-    };
+    listenForInstallPrompt((e) => setInstallPrompt(e));
+    window.addEventListener('appinstalled', () => setIsInstalled(true));
+    return () => window.removeEventListener('appinstalled', () => setIsInstalled(true));
   }, []);
-  
-  // Apply dark mode
+
+  // Dark mode toggling
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-    }
+    document.documentElement.classList.toggle('dark-mode', darkMode);
   }, [darkMode]);
-  
-  // Handle PWA install
+
+  // MiSTer status (polling REST API)
+  const { coreRunning, gameRunning, connected, error, refresh } = useMisterStatus({
+    host: misterHost,
+    pollInterval: 2000
+  });
+
   const handleInstallClick = async () => {
     if (installPrompt) {
       const result = await showInstallPrompt(installPrompt);
@@ -184,27 +165,19 @@ const { coreRunning, gameRunning, connected, error, refresh } = useMisterStatus(
       }
     }
   };
-  
+
   return (
     <div className={`app ${darkMode ? 'dark' : 'light'}`}>
       <header className="app-header">
         <h1>MiSTer Second Screen</h1>
-        <button 
-          onClick={() => setSettingsOpen(true)}
-          className="settings-button"
-          aria-label="Settings"
-        >
-          ⚙️
-        </button>
+        <button onClick={() => setSettingsOpen(true)} className="settings-button">⚙️</button>
       </header>
-      
+
       <main className="app-content">
         {isOffline && (
-          <div className="offline-banner">
-            <span>You are offline. Using cached content.</span>
-          </div>
+          <div className="offline-banner">You are offline. Using cached content.</div>
         )}
-        
+
         {!isInstalled && installPrompt && (
           <div className="install-prompt">
             <p>Install this app on your device for the best experience!</p>
@@ -216,15 +189,31 @@ const { coreRunning, gameRunning, connected, error, refresh } = useMisterStatus(
             </button>
           </div>
         )}
-        
-        <ArtCard className="main-art-card" />
+
+        {/* Game info and art */}
+        {connected ? (
+          <>
+            <p>Core: {coreRunning}</p>
+            <p>Game: {gameRunning}</p>
+
+            {gameRunning ? (
+              <ArtCard className="main-art-card" gameTitle={gameRunning} />
+            ) : (
+              <div className="placeholder-art">No game loaded</div>
+            )}
+
+            <button onClick={refresh}>Refresh Now</button>
+          </>
+        ) : (
+          <p>Disconnected{error ? `: ${error}` : ''}</p>
+        )}
       </main>
-      
+
       <footer className="app-footer">
         <p>MiSTer Second Screen PWA | <a href="#about">About</a></p>
       </footer>
-      
-      <SettingsDrawer 
+
+      <SettingsDrawer
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         misterHost={misterHost}
